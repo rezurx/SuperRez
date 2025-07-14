@@ -1,0 +1,115 @@
+{
+  "name": "superrez",
+  "displayName": "SuperRez",
+  "description": "Cost-aware AI development assistant - Superior alternative to SuperClaude",
+  "version": "0.1.0",
+  "publisher": "SuperRez",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rezurx/SuperRez.git"
+  },
+  "bugs": {
+    "url": "https://github.com/rezurx/SuperRez/issues"
+  },
+  "homepage": "https://github.com/rezurx/SuperRez#readme",
+  "engines": {
+    "vscode": "^1.74.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "superrez.startSession",
+        "title": "Start Session",
+        "category": "SuperRez"
+      },
+      {
+        "command": "superrez.endSession",
+        "title": "End Session",
+        "category": "SuperRez"
+      },
+      {
+        "command": "superrez.analyzeSecurity",
+        "title": "Analyze Security",
+        "category": "SuperRez"
+      },
+      {
+        "command": "superrez.showStatus",
+        "title": "Show Status",
+        "category": "SuperRez"
+      },
+      {
+        "command": "superrez.discoverProjects",
+        "title": "Discover Projects",
+        "category": "SuperRez"
+      },
+      {
+        "command": "superrez.showAITools",
+        "title": "Show AI Tools",
+        "category": "SuperRez"
+      },
+      {
+        "command": "superrez.generatePrompt",
+        "title": "Generate Smart Prompt",
+        "category": "SuperRez"
+      },
+      {
+        "command": "superrez.routeTask",
+        "title": "Route Task to AI",
+        "category": "SuperRez"
+      },
+      {
+        "command": "superrez.analyzePerformance",
+        "title": "Analyze Performance",
+        "category": "SuperRez"
+      }
+    ],
+    "configuration": {
+      "title": "SuperRez",
+      "properties": {
+        "superrez.monthlyBudget": {
+          "type": "number",
+          "default": 50,
+          "description": "Monthly budget for AI API calls in USD"
+        },
+        "superrez.preferredAI": {
+          "type": "string",
+          "enum": [
+            "claude-code",
+            "gemini-cli",
+            "copilot",
+            "auto"
+          ],
+          "default": "auto",
+          "description": "Preferred AI tool for tasks"
+        },
+        "superrez.showCostWarnings": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show cost warnings before AI API calls"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/glob": "^8.1.0",
+    "@types/node": "16.x",
+    "@types/vscode": "^1.74.0",
+    "typescript": "^4.9.4"
+  },
+  "dependencies": {
+    "glob": "^8.1.0"
+  }
+}
