@@ -1,0 +1,93 @@
+name: Discord Notifications
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  release:
+    types: [ published ]
+  issues:
+    types: [ opened ]
+
+jobs:
+  discord-notification:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Get commit info
+      id: commit
+      run: |
+        echo "message=$(git log --format=%s -n 1 ${{ github.event.after }})" >> $GITHUB_OUTPUT
+        echo "author=$(git log --format=%an -n 1 ${{ github.event.after }})" >> $GITHUB_OUTPUT
+        echo "url=https://github.com/${{ github.repository }}/commit/${{ github.sha }}" >> $GITHUB_OUTPUT
+
+    - name: Discord notification for push
+      if: github.event_name == 'push'
+      uses: Ilshidur/action-discord@master
+      env:
+        DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
+      with:
+        args: |
+          🚀 **SuperRez Update** 
+          
+          **Commit**: ${{ steps.commit.outputs.message }}
+          **Author**: ${{ steps.commit.outputs.author }}
+          **Branch**: ${{ github.ref_name }}
+          
+          [View Changes](${{ steps.commit.outputs.url }})
+          
+          💡 *Building the future of cost-effective AI development*
+
+    - name: Discord notification for PR
+      if: github.event_name == 'pull_request'
+      uses: Ilshidur/action-discord@master
+      env:
+        DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
+      with:
+        args: |
+          🔄 **Pull Request ${{ github.event.action }}**
+          
+          **Title**: ${{ github.event.pull_request.title }}
+          **Author**: ${{ github.event.pull_request.user.login }}
+          **Branch**: ${{ github.event.pull_request.head.ref }} → ${{ github.event.pull_request.base.ref }}
+          
+          [View PR](${{ github.event.pull_request.html_url }})
+          
+          💰 *Help us save developers money with SuperRez!*
+
+    - name: Discord notification for release
+      if: github.event_name == 'release'
+      uses: Ilshidur/action-discord@master
+      env:
+        DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
+      with:
+        args: |
+          🎉 **SuperRez Release: ${{ github.event.release.tag_name }}**
+          
+          **${{ github.event.release.name }}**
+          
+          ${{ github.event.release.body }}
+          
+          [Download Extension](${{ github.event.release.html_url }})
+          
+          💸 *95% cost reduction vs SuperClaude - download now!*
+
+    - name: Discord notification for issues
+      if: github.event_name == 'issues' && github.event.action == 'opened'
+      uses: Ilshidur/action-discord@master
+      env:
+        DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
+      with:
+        args: |
+          🐛 **New Issue Opened**
+          
+          **Title**: ${{ github.event.issue.title }}
+          **Author**: ${{ github.event.issue.user.login }}
+          **Labels**: ${{ join(github.event.issue.labels.*.name, ', ') }}
+          
+          [View Issue](${{ github.event.issue.html_url }})
+          
+          🤝 *Community-driven development in action!*

@@ -1,0 +1,86 @@
+name: Issue Auto-Labeler
+
+on:
+  issues:
+    types: [opened, edited]
+
+jobs:
+  label-issues:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Label bug reports
+      if: contains(github.event.issue.title, '[BUG]') || contains(github.event.issue.body, 'bug')
+      uses: actions/github-script@v6
+      with:
+        script: |
+          github.rest.issues.addLabels({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: context.issue.number,
+            labels: ['bug', 'needs-triage']
+          })
+
+    - name: Label feature requests
+      if: contains(github.event.issue.title, '[FEATURE]') || contains(github.event.issue.body, 'feature')
+      uses: actions/github-script@v6
+      with:
+        script: |
+          github.rest.issues.addLabels({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: context.issue.number,
+            labels: ['enhancement', 'needs-triage']
+          })
+
+    - name: Label cost-related issues
+      if: contains(github.event.issue.body, 'cost') || contains(github.event.issue.body, 'budget') || contains(github.event.issue.body, 'expensive')
+      uses: actions/github-script@v6
+      with:
+        script: |
+          github.rest.issues.addLabels({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: context.issue.number,
+            labels: ['cost-optimization', 'high-priority']
+          })
+
+    - name: Label AI tool issues
+      if: contains(github.event.issue.body, 'Claude') || contains(github.event.issue.body, 'Gemini') || contains(github.event.issue.body, 'Copilot') || contains(github.event.issue.body, 'Ollama')
+      uses: actions/github-script@v6
+      with:
+        script: |
+          github.rest.issues.addLabels({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: context.issue.number,
+            labels: ['ai-integration']
+          })
+
+    - name: Label security issues
+      if: contains(github.event.issue.body, 'security') || contains(github.event.issue.body, 'vulnerability')
+      uses: actions/github-script@v6
+      with:
+        script: |
+          github.rest.issues.addLabels({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: context.issue.number,
+            labels: ['security', 'high-priority']
+          })
+
+    - name: Discord notification for important issues
+      if: contains(github.event.issue.labels.*.name, 'high-priority') || contains(github.event.issue.labels.*.name, 'security')
+      uses: Ilshidur/action-discord@master
+      env:
+        DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
+      with:
+        args: |
+          🚨 **High Priority Issue**
+          
+          **Title**: ${{ github.event.issue.title }}
+          **Author**: ${{ github.event.issue.user.login }}
+          **Labels**: ${{ join(github.event.issue.labels.*.name, ', ') }}
+          
+          [View Issue](${{ github.event.issue.html_url }})
+          
+          ⚡ *Needs immediate attention from the community!*
