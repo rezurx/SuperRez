@@ -135,3 +135,70 @@ Cost-aware AI development assistant - Superior alternative to SuperClaude
 - **✅ Smart AI routing and cost optimization**
 
 **SuperRez proves that local-first can beat cloud-first while providing superior functionality at a fraction of the cost.**
+
+## 🔧 Development & Troubleshooting
+
+### **Extension Installation & Deployment**
+
+#### **Local Development**
+1. Compile TypeScript: `npm run compile`
+2. Test in Extension Development Host: Press `F5` in VSCode
+3. Package for distribution: `vsce package`
+
+#### **Remote Installation**
+1. Create VSIX package: `vsce package` (generates `superrez-0.1.0.vsix`)
+2. Transfer VSIX file to remote computer
+3. Install via Command Palette: `Extensions: Install from VSIX...`
+4. Restart VSCode after installation
+
+#### **Common Issues & Solutions**
+
+**Issue: "Cannot find module 'glob'" error**
+- **Cause**: External dependencies not bundled in VSIX package
+- **Solution**: Replace external dependencies with Node.js built-ins
+- **Fix Applied**: Replaced `glob` package with custom `findFiles()` function using `fs.readdirSync()`
+
+**Issue: Commands appear in palette but don't execute**
+- **Cause**: Extension activation failure due to missing dependencies
+- **Solution**: Check Developer Console (Help → Toggle Developer Tools) for specific errors
+- **Debug**: Look for activation errors and missing module messages
+
+**Issue: Extension not showing in Extensions list**
+- **Cause**: Installation failure or VSCode caching issues
+- **Solution**: Restart VSCode, reinstall from VSIX, clear extension cache
+
+### **Recent Fixes Applied**
+
+#### **Dependency Management Fix (Latest)**
+- **Problem**: `glob` dependency caused "Cannot find module" errors on remote installations
+- **Root Cause**: External dependencies not properly bundled in VSIX packages
+- **Solution**: Replaced `glob` with built-in Node.js modules
+- **Code Changes**:
+  - Removed `import { glob } from 'glob'` from `securityScanner.ts`
+  - Implemented custom `findFiles()` function using `fs.readdirSync()`
+  - Updated `package.json` to remove `glob` dependency
+  - Recompiled and repackaged extension
+
+#### **Files Modified**
+- `src/securityScanner.ts`: Replaced glob with custom file finder
+- `package.json`: Removed glob dependency
+
+### **Next Steps**
+
+#### **Phase 3: Multi-AI Team Simulator**
+1. **Parallel AI Integration**: Enable simultaneous AI tool usage
+2. **Consensus Mechanisms**: Implement voting systems for AI recommendations
+3. **Role-based Agents**: Create specialized AI agents (security, performance, frontend, backend)
+4. **Team Workflow**: Revolutionary collaborative development approach
+
+#### **Immediate Enhancements**
+1. **Error Handling**: Improve error messages and recovery mechanisms
+2. **Performance**: Optimize file scanning and analysis algorithms
+3. **UI/UX**: Enhanced status indicators and progress feedback
+4. **Testing**: Comprehensive unit and integration tests
+
+#### **Extension Store Preparation**
+1. **Marketplace Publishing**: Prepare for VSCode marketplace submission
+2. **Documentation**: Complete user guides and API documentation
+3. **CI/CD**: Set up automated testing and deployment pipeline
+4. **Community**: Establish GitHub repository and community guidelines
