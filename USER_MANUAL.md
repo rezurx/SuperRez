@@ -193,6 +193,37 @@ SuperRez: Manage Templates
 → Template library management interface
 ```
 
+### **🧠 Advanced Consensus Engine (NEW - Phase 4.2)**
+**Purpose**: Mathematical consensus algorithms for multi-agent decision making
+
+**Consensus Methods**:
+- **Simple Majority**: Democratic voting with confidence weighting
+- **Weighted Majority**: Custom weight functions for agent expertise levels
+- **Confidence Weighted**: Harmonic mean confidence scoring for quality decisions
+- **Byzantine Fault Tolerant**: Safety-critical consensus with fault tolerance (handles up to 1/3 faulty agents)
+- **Rank Aggregation**: Borda count method for complex preference ordering
+- **Fuzzy Consensus**: Partial agreement handling with similarity matching
+- **Cost Optimized**: Maximum quality per dollar spent analysis
+
+**Advanced Features**:
+- **Statistical Analysis**: Variance, standard deviation, harmonic mean calculations
+- **Outlier Detection**: Automatic removal of suspicious or low-quality votes
+- **Conflict Resolution**: Real-time resolution of multi-agent disagreements
+- **Quality Metrics**: Agreement level, confidence variance, consensus strength, cost efficiency
+
+**Usage**:
+```
+SuperRez: Run Consensus Analysis
+→ Select scenario (Code Review, Architecture Decision, Security Assessment)
+→ View consensus results across all 7 algorithms
+→ Compare decision quality and cost efficiency
+
+SuperRez: Test Consensus Engine
+→ Choose test scenario (High Agreement, Split Decision, Byzantine Fault, Cost Optimization)
+→ Detailed consensus analysis with mathematical metrics
+→ Individual vote breakdown and alternative options
+```
+
 ### **👥 Multi-AI Team Simulator (Phase 3)**
 **Purpose**: Parallel AI collaboration for complex tasks
 
@@ -251,6 +282,12 @@ SuperRez: Show Team Status
 |---------|-------------|-------------------|
 | `SuperRez: Generate From Template` | Create code from templates | 4 built-in + custom |
 | `SuperRez: Manage Templates` | Template library management | View, categorize, stats |
+
+### **Advanced Consensus Engine (NEW)**
+| Command | Description | Algorithms Available |
+|---------|-------------|-------------------|
+| `SuperRez: Run Consensus Analysis` | Multi-agent consensus simulation | 7 mathematical methods |
+| `SuperRez: Test Consensus Engine` | Test consensus algorithms | 4 comprehensive scenarios |
 
 ### **Multi-AI Team**
 | Command | Description | Agent Types |
