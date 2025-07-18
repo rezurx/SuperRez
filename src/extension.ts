@@ -6,6 +6,7 @@ import { CostTracker } from './costTracker';
 import { AIOrchestrator } from './aiOrchestrator';
 import { CrewAIIntegration } from './crewAIIntegration';
 import { PerformanceAnalyzer } from './performanceAnalyzer';
+import { TemplateEngine } from './templateEngine';
 
 let sessionManager: SessionManager;
 let securityScanner: SecurityScanner;
@@ -14,6 +15,7 @@ let costTracker: CostTracker;
 let aiOrchestrator: AIOrchestrator;
 let crewAIIntegration: CrewAIIntegration;
 let performanceAnalyzer: PerformanceAnalyzer;
+let templateEngine: TemplateEngine;
 let statusBarItem: vscode.StatusBarItem;
 
 export function activate(context: vscode.ExtensionContext) {
@@ -27,6 +29,7 @@ export function activate(context: vscode.ExtensionContext) {
     aiOrchestrator = new AIOrchestrator();
     crewAIIntegration = new CrewAIIntegration(aiOrchestrator, costTracker);
     performanceAnalyzer = new PerformanceAnalyzer();
+    templateEngine = new TemplateEngine(sessionManager, aiOrchestrator);
 
     // Create status bar item
     statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
@@ -49,7 +52,9 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.commands.registerCommand('superrez.routeTask', () => routeTask()),
         vscode.commands.registerCommand('superrez.analyzePerformance', () => analyzePerformance()),
         vscode.commands.registerCommand('superrez.createMultiAITeam', () => createMultiAITeam()),
-        vscode.commands.registerCommand('superrez.showTeamStatus', () => showTeamStatus())
+        vscode.commands.registerCommand('superrez.showTeamStatus', () => showTeamStatus()),
+        vscode.commands.registerCommand('superrez.generateFromTemplate', () => generateFromTemplate()),
+        vscode.commands.registerCommand('superrez.manageTemplates', () => manageTemplates())
     ];
 
     context.subscriptions.push(...commands);
@@ -436,6 +441,145 @@ async function showTeamStatus() {
         outputChannel.show();
     } catch (error) {
         vscode.window.showErrorMessage(`Failed to get team status: ${error}`);
+    }
+}
+
+async function generateFromTemplate() {
+    try {
+        const templates = templateEngine.getAvailableTemplates();
+        if (templates.length === 0) {
+            vscode.window.showWarningMessage('No templates available');
+            return;
+        }
+
+        const selectedTemplate = await vscode.window.showQuickPick(
+            templates.map(t => ({
+                label: t.name,
+                description: t.description,
+                detail: `${t.category} | ${t.language} ${t.framework ? `(${t.framework})` : ''}`,
+                template: t
+            })),
+            { placeHolder: 'Select a template to generate code from' }
+        );
+
+        if (selectedTemplate) {
+            // Collect template variables
+            const customVariables: Record<string, any> = {};
+            
+            for (const variable of selectedTemplate.template.variables) {
+                if (variable.required || variable.defaultValue === undefined) {
+                    const value = await vscode.window.showInputBox({
+                        prompt: variable.description,
+                        placeHolder: variable.defaultValue?.toString() || '',
+                        value: variable.defaultValue?.toString() || ''
+                    });
+                    
+                    if (value === undefined) return; // User cancelled
+                    
+                    // Type conversion
+                    switch (variable.type) {
+                        case 'boolean':
+                            customVariables[variable.name] = value.toLowerCase() === 'true';
+                            break;
+                        case 'array':
+                            customVariables[variable.name] = value.split(',').map(s => s.trim());
+                            break;
+                        default:
+                            customVariables[variable.name] = value;
+                    }
+                }
+            }
+
+            const generatedCode = await templateEngine.generateFromTemplate(
+                selectedTemplate.template.name,
+                customVariables
+            );
+
+            if (generatedCode) {
+                // Create new document with generated code
+                const doc = await vscode.workspace.openTextDocument({
+                    content: generatedCode,
+                    language: selectedTemplate.template.language
+                });
+                await vscode.window.showTextDocument(doc);
+                vscode.window.showInformationMessage(`Generated code from template: ${selectedTemplate.template.name}`);
+            }
+        }
+    } catch (error) {
+        vscode.window.showErrorMessage(`Failed to generate from template: ${error}`);
+    }
+}
+
+async function manageTemplates() {
+    try {
+        const templates = templateEngine.getAvailableTemplates();
+        const categories = [...new Set(templates.map(t => t.category))];
+
+        const action = await vscode.window.showQuickPick([
+            { label: 'View All Templates', action: 'view-all' },
+            { label: 'View by Category', action: 'view-category' },
+            { label: 'Template Statistics', action: 'stats' }
+        ], { placeHolder: 'Choose template management action' });
+
+        if (!action) return;
+
+        const outputChannel = vscode.window.createOutputChannel('SuperRez Templates');
+        outputChannel.clear();
+
+        switch (action.action) {
+            case 'view-all':
+                outputChannel.appendLine('# Available Templates\n');
+                templates.forEach(template => {
+                    outputChannel.appendLine(`## ${template.name}`);
+                    outputChannel.appendLine(`**Description**: ${template.description}`);
+                    outputChannel.appendLine(`**Category**: ${template.category}`);
+                    outputChannel.appendLine(`**Language**: ${template.language}`);
+                    if (template.framework) {
+                        outputChannel.appendLine(`**Framework**: ${template.framework}`);
+                    }
+                    outputChannel.appendLine(`**Variables**: ${template.variables.length}`);
+                    outputChannel.appendLine('');
+                });
+                break;
+
+            case 'view-category':
+                const selectedCategory = await vscode.window.showQuickPick(
+                    categories.map(cat => ({ label: cat, category: cat })),
+                    { placeHolder: 'Select category to view' }
+                );
+                
+                if (selectedCategory) {
+                    const categoryTemplates = templateEngine.getTemplatesByCategory(selectedCategory.category as any);
+                    outputChannel.appendLine(`# ${selectedCategory.category.toUpperCase()} Templates\n`);
+                    categoryTemplates.forEach(template => {
+                        outputChannel.appendLine(`- **${template.name}**: ${template.description}`);
+                    });
+                }
+                break;
+
+            case 'stats':
+                outputChannel.appendLine('# Template Statistics\n');
+                outputChannel.appendLine(`**Total Templates**: ${templates.length}`);
+                outputChannel.appendLine(`**Categories**: ${categories.length}`);
+                outputChannel.appendLine('');
+                outputChannel.appendLine('## By Category:');
+                categories.forEach(category => {
+                    const count = templates.filter(t => t.category === category).length;
+                    outputChannel.appendLine(`- ${category}: ${count}`);
+                });
+                outputChannel.appendLine('');
+                outputChannel.appendLine('## By Language:');
+                const languages = [...new Set(templates.map(t => t.language))];
+                languages.forEach(language => {
+                    const count = templates.filter(t => t.language === language).length;
+                    outputChannel.appendLine(`- ${language}: ${count}`);
+                });
+                break;
+        }
+
+        outputChannel.show();
+    } catch (error) {
+        vscode.window.showErrorMessage(`Failed to manage templates: ${error}`);
     }
 }
 
