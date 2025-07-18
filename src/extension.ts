@@ -7,6 +7,7 @@ import { AIOrchestrator } from './aiOrchestrator';
 import { CrewAIIntegration } from './crewAIIntegration';
 import { PerformanceAnalyzer } from './performanceAnalyzer';
 import { TemplateEngine } from './templateEngine';
+import { ConsensusEngine } from './consensusEngine';
 
 let sessionManager: SessionManager;
 let securityScanner: SecurityScanner;
@@ -16,6 +17,7 @@ let aiOrchestrator: AIOrchestrator;
 let crewAIIntegration: CrewAIIntegration;
 let performanceAnalyzer: PerformanceAnalyzer;
 let templateEngine: TemplateEngine;
+let consensusEngine: ConsensusEngine;
 let statusBarItem: vscode.StatusBarItem;
 
 export function activate(context: vscode.ExtensionContext) {
@@ -30,6 +32,7 @@ export function activate(context: vscode.ExtensionContext) {
     crewAIIntegration = new CrewAIIntegration(aiOrchestrator, costTracker);
     performanceAnalyzer = new PerformanceAnalyzer();
     templateEngine = new TemplateEngine(sessionManager, aiOrchestrator);
+    consensusEngine = new ConsensusEngine(costTracker);
 
     // Create status bar item
     statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
@@ -54,7 +57,9 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.commands.registerCommand('superrez.createMultiAITeam', () => createMultiAITeam()),
         vscode.commands.registerCommand('superrez.showTeamStatus', () => showTeamStatus()),
         vscode.commands.registerCommand('superrez.generateFromTemplate', () => generateFromTemplate()),
-        vscode.commands.registerCommand('superrez.manageTemplates', () => manageTemplates())
+        vscode.commands.registerCommand('superrez.manageTemplates', () => manageTemplates()),
+        vscode.commands.registerCommand('superrez.runConsensusAnalysis', () => runConsensusAnalysis()),
+        vscode.commands.registerCommand('superrez.testConsensusEngine', () => testConsensusEngine())
     ];
 
     context.subscriptions.push(...commands);
@@ -580,6 +585,303 @@ async function manageTemplates() {
         outputChannel.show();
     } catch (error) {
         vscode.window.showErrorMessage(`Failed to manage templates: ${error}`);
+    }
+}
+
+async function runConsensusAnalysis() {
+    try {
+        const activeSession = sessionManager.getActiveSession();
+        if (!activeSession) {
+            vscode.window.showWarningMessage('No active session. Please start a session first.');
+            return;
+        }
+
+        // Create sample scenario for consensus analysis
+        const scenario = await vscode.window.showQuickPick([
+            { label: 'Code Review Consensus', description: 'Multiple agents review code changes', scenario: 'code_review' },
+            { label: 'Architecture Decision', description: 'Team decides on technical architecture', scenario: 'architecture' },
+            { label: 'Security Assessment', description: 'Evaluate security recommendations', scenario: 'security' },
+            { label: 'Performance Optimization', description: 'Choose performance improvement strategy', scenario: 'performance' }
+        ], { placeHolder: 'Select consensus analysis scenario' });
+
+        if (!scenario) return;
+
+        vscode.window.showInformationMessage('Running consensus analysis simulation...');
+
+        // Create simulated multi-agent votes based on scenario
+        const votes = await createSimulatedVotes(scenario.scenario);
+        
+        // Run different consensus methods
+        const methods = [
+            'confidence_weighted',
+            'byzantine_fault_tolerant', 
+            'cost_optimized',
+            'fuzzy_consensus'
+        ];
+
+        const outputChannel = vscode.window.createOutputChannel('SuperRez Consensus Analysis');
+        outputChannel.clear();
+        outputChannel.appendLine(`# Consensus Analysis: ${scenario.label}\n`);
+        outputChannel.appendLine(`**Scenario**: ${scenario.description}`);
+        outputChannel.appendLine(`**Participating Agents**: ${votes.length}`);
+        outputChannel.appendLine(`**Timestamp**: ${new Date().toISOString()}\n`);
+
+        for (const method of methods) {
+            try {
+                const result = await consensusEngine.processVotes(votes, method as any);
+                
+                outputChannel.appendLine(`## ${method.toUpperCase()} Method\n`);
+                outputChannel.appendLine(`**Decision**: ${result.finalDecision}`);
+                outputChannel.appendLine(`**Confidence**: ${result.confidence.toFixed(3)}`);
+                outputChannel.appendLine(`**Agreement Level**: ${result.metrics.agreementLevel.toFixed(3)}`);
+                outputChannel.appendLine(`**Consensus Strength**: ${result.metrics.consensusStrength.toFixed(3)}`);
+                outputChannel.appendLine(`**Cost Efficiency**: ${result.metrics.costEfficiency.toFixed(3)}`);
+                outputChannel.appendLine(`**Convergence Time**: ${result.metrics.convergenceTime}ms`);
+                outputChannel.appendLine(`**Reasoning**: ${result.reasoning}\n`);
+                
+                if (result.alternatives.length > 0) {
+                    outputChannel.appendLine(`**Alternatives**:`);
+                    result.alternatives.forEach(alt => {
+                        outputChannel.appendLine(`  - ${alt.option}: ${(alt.support * 100).toFixed(1)}% support, confidence ${alt.averageConfidence.toFixed(3)}`);
+                    });
+                    outputChannel.appendLine('');
+                }
+            } catch (error) {
+                outputChannel.appendLine(`**${method.toUpperCase()} Failed**: ${error}\n`);
+            }
+        }
+
+        outputChannel.appendLine(`## Analysis Complete\n`);
+        outputChannel.appendLine(`Generated by SuperRez Consensus Engine at ${new Date().toLocaleString()}`);
+        outputChannel.show();
+
+        vscode.window.showInformationMessage('Consensus analysis complete. Check SuperRez Consensus Analysis output.');
+
+    } catch (error) {
+        vscode.window.showErrorMessage(`Consensus analysis failed: ${error}`);
+    }
+}
+
+async function testConsensusEngine() {
+    try {
+        // Quick consensus engine test with predefined scenarios
+        const testScenario = await vscode.window.showQuickPick([
+            { label: 'High Agreement Test', description: '4/5 agents agree strongly', test: 'high_agreement' },
+            { label: 'Split Decision Test', description: '3 vs 2 agents with different confidence', test: 'split_decision' },
+            { label: 'Byzantine Fault Test', description: 'Test Byzantine fault tolerance', test: 'byzantine_fault' },
+            { label: 'Cost Optimization Test', description: 'Test cost-optimized consensus', test: 'cost_optimization' }
+        ], { placeHolder: 'Select consensus engine test' });
+
+        if (!testScenario) return;
+
+        vscode.window.showInformationMessage(`Running ${testScenario.label}...`);
+
+        const votes = createTestVotes(testScenario.test);
+        const result = await consensusEngine.processVotes(votes);
+
+        const outputChannel = vscode.window.createOutputChannel('SuperRez Consensus Test');
+        outputChannel.clear();
+        outputChannel.appendLine(`# Consensus Engine Test: ${testScenario.label}\n`);
+        
+        outputChannel.appendLine(`**Test Scenario**: ${testScenario.description}`);
+        outputChannel.appendLine(`**Input Votes**: ${votes.length}`);
+        outputChannel.appendLine(`**Method Used**: ${result.method}\n`);
+        
+        outputChannel.appendLine(`## Results\n`);
+        outputChannel.appendLine(`**Final Decision**: ${result.finalDecision}`);
+        outputChannel.appendLine(`**Confidence**: ${result.confidence.toFixed(3)}`);
+        outputChannel.appendLine(`**Agreement Level**: ${result.metrics.agreementLevel.toFixed(3)}`);
+        outputChannel.appendLine(`**Consensus Strength**: ${result.metrics.consensusStrength.toFixed(3)}`);
+        outputChannel.appendLine(`**Cost Efficiency**: ${result.metrics.costEfficiency.toFixed(3)}`);
+        outputChannel.appendLine(`**Convergence Time**: ${result.metrics.convergenceTime}ms\n`);
+        
+        outputChannel.appendLine(`**Reasoning**: ${result.reasoning}\n`);
+        
+        outputChannel.appendLine(`## Individual Votes\n`);
+        votes.forEach((vote, index) => {
+            outputChannel.appendLine(`**Agent ${index + 1}** (${vote.agentName}):`);
+            outputChannel.appendLine(`  - Recommendation: ${vote.recommendation}`);
+            outputChannel.appendLine(`  - Confidence: ${vote.confidence.toFixed(3)}`);
+            outputChannel.appendLine(`  - Cost: $${vote.cost.toFixed(4)}`);
+            outputChannel.appendLine(`  - Reasoning: ${vote.reasoning}`);
+            outputChannel.appendLine('');
+        });
+
+        if (result.alternatives.length > 0) {
+            outputChannel.appendLine(`## Alternative Options\n`);
+            result.alternatives.forEach(alt => {
+                outputChannel.appendLine(`**${alt.option}**:`);
+                outputChannel.appendLine(`  - Support: ${(alt.support * 100).toFixed(1)}%`);
+                outputChannel.appendLine(`  - Average Confidence: ${alt.averageConfidence.toFixed(3)}`);
+                outputChannel.appendLine(`  - Supporting Agents: ${alt.supportingAgents.join(', ')}`);
+                outputChannel.appendLine('');
+            });
+        }
+
+        outputChannel.appendLine(`## Test Complete\n`);
+        outputChannel.appendLine(`Test passed successfully at ${new Date().toLocaleString()}`);
+        outputChannel.show();
+
+        vscode.window.showInformationMessage(`Consensus test "${testScenario.label}" completed successfully!`);
+
+    } catch (error) {
+        vscode.window.showErrorMessage(`Consensus test failed: ${error}`);
+    }
+}
+
+async function createSimulatedVotes(scenario: string): Promise<import('./consensusEngine').AgentVote[]> {
+    
+    switch (scenario) {
+        case 'code_review':
+            return [
+                {
+                    agentId: 'security-agent',
+                    agentName: 'Security Agent',
+                    recommendation: 'Approve with security improvements',
+                    confidence: 0.85,
+                    reasoning: 'Code is secure but needs input validation enhancements',
+                    evidence: ['SQL injection protection', 'XSS prevention', 'Authentication checks'],
+                    cost: 0.05,
+                    timestamp: new Date()
+                },
+                {
+                    agentId: 'performance-agent', 
+                    agentName: 'Performance Agent',
+                    recommendation: 'Approve with performance optimizations',
+                    confidence: 0.78,
+                    reasoning: 'Performance is acceptable but can be optimized',
+                    evidence: ['Database query efficiency', 'Caching strategy', 'Algorithm complexity'],
+                    cost: 0.03,
+                    timestamp: new Date()
+                },
+                {
+                    agentId: 'frontend-agent',
+                    agentName: 'Frontend Agent', 
+                    recommendation: 'Approve with UI improvements',
+                    confidence: 0.92,
+                    reasoning: 'UI code follows best practices with minor improvements needed',
+                    evidence: ['Component structure', 'State management', 'Accessibility'],
+                    cost: 0.02,
+                    timestamp: new Date()
+                },
+                {
+                    agentId: 'backend-agent',
+                    agentName: 'Backend Agent',
+                    recommendation: 'Reject - requires API refactoring',
+                    confidence: 0.88,
+                    reasoning: 'API design needs significant refactoring for maintainability',
+                    evidence: ['REST principles', 'Error handling', 'Documentation'],
+                    cost: 0.04,
+                    timestamp: new Date()
+                }
+            ];
+            
+        case 'architecture':
+            return [
+                {
+                    agentId: 'backend-agent',
+                    agentName: 'Backend Agent',
+                    recommendation: 'Microservices architecture',
+                    confidence: 0.82,
+                    reasoning: 'Microservices provide better scalability and maintainability',
+                    evidence: ['Scalability requirements', 'Team structure', 'Technology diversity'],
+                    cost: 0.06,
+                    timestamp: new Date()
+                },
+                {
+                    agentId: 'performance-agent',
+                    agentName: 'Performance Agent',
+                    recommendation: 'Monolithic architecture',
+                    confidence: 0.75,
+                    reasoning: 'Monolith provides better performance and simpler deployment',
+                    evidence: ['Latency requirements', 'Deployment complexity', 'Development speed'],
+                    cost: 0.04,
+                    timestamp: new Date()
+                },
+                {
+                    agentId: 'security-agent',
+                    agentName: 'Security Agent',
+                    recommendation: 'Microservices architecture',
+                    confidence: 0.70,
+                    reasoning: 'Better security isolation between services',
+                    evidence: ['Attack surface', 'Security boundaries', 'Compliance requirements'],
+                    cost: 0.05,
+                    timestamp: new Date()
+                }
+            ];
+            
+        default:
+            return [
+                {
+                    agentId: 'agent-1',
+                    agentName: 'Agent 1',
+                    recommendation: 'Option A',
+                    confidence: 0.8,
+                    reasoning: 'Standard recommendation based on analysis',
+                    evidence: ['Evidence 1', 'Evidence 2'],
+                    cost: 0.03,
+                    timestamp: new Date()
+                },
+                {
+                    agentId: 'agent-2', 
+                    agentName: 'Agent 2',
+                    recommendation: 'Option B',
+                    confidence: 0.6,
+                    reasoning: 'Alternative approach with different trade-offs',
+                    evidence: ['Evidence 3'],
+                    cost: 0.02,
+                    timestamp: new Date()
+                }
+            ];
+    }
+}
+
+function createTestVotes(testType: string): import('./consensusEngine').AgentVote[] {
+    const baseVote = {
+        timestamp: new Date(),
+        evidence: ['Test evidence']
+    };
+
+    switch (testType) {
+        case 'high_agreement':
+            return [
+                { ...baseVote, agentId: 'agent-1', agentName: 'Agent 1', recommendation: 'Option A', confidence: 0.95, reasoning: 'Strong agreement', cost: 0.02 },
+                { ...baseVote, agentId: 'agent-2', agentName: 'Agent 2', recommendation: 'Option A', confidence: 0.90, reasoning: 'Strong agreement', cost: 0.03 },
+                { ...baseVote, agentId: 'agent-3', agentName: 'Agent 3', recommendation: 'Option A', confidence: 0.88, reasoning: 'Strong agreement', cost: 0.02 },
+                { ...baseVote, agentId: 'agent-4', agentName: 'Agent 4', recommendation: 'Option A', confidence: 0.92, reasoning: 'Strong agreement', cost: 0.04 },
+                { ...baseVote, agentId: 'agent-5', agentName: 'Agent 5', recommendation: 'Option B', confidence: 0.60, reasoning: 'Minority opinion', cost: 0.02 }
+            ];
+            
+        case 'split_decision':
+            return [
+                { ...baseVote, agentId: 'agent-1', agentName: 'Agent 1', recommendation: 'Option A', confidence: 0.85, reasoning: 'Strong preference', cost: 0.05 },
+                { ...baseVote, agentId: 'agent-2', agentName: 'Agent 2', recommendation: 'Option A', confidence: 0.70, reasoning: 'Moderate preference', cost: 0.03 },
+                { ...baseVote, agentId: 'agent-3', agentName: 'Agent 3', recommendation: 'Option A', confidence: 0.65, reasoning: 'Weak preference', cost: 0.02 },
+                { ...baseVote, agentId: 'agent-4', agentName: 'Agent 4', recommendation: 'Option B', confidence: 0.80, reasoning: 'Strong counter-argument', cost: 0.04 },
+                { ...baseVote, agentId: 'agent-5', agentName: 'Agent 5', recommendation: 'Option B', confidence: 0.75, reasoning: 'Good alternative', cost: 0.03 }
+            ];
+            
+        case 'byzantine_fault':
+            return [
+                { ...baseVote, agentId: 'agent-1', agentName: 'Agent 1', recommendation: 'Option A', confidence: 0.90, reasoning: 'Reliable agent', cost: 0.03 },
+                { ...baseVote, agentId: 'agent-2', agentName: 'Agent 2', recommendation: 'Option A', confidence: 0.85, reasoning: 'Reliable agent', cost: 0.03 },
+                { ...baseVote, agentId: 'agent-3', agentName: 'Agent 3', recommendation: 'Option A', confidence: 0.88, reasoning: 'Reliable agent', cost: 0.03 },
+                { ...baseVote, agentId: 'faulty-1', agentName: 'Faulty Agent 1', recommendation: 'Option C', confidence: 0.20, reasoning: 'Suspicious reasoning', cost: 0.01, evidence: [] },
+                { ...baseVote, agentId: 'faulty-2', agentName: 'Faulty Agent 2', recommendation: 'Option D', confidence: 0.15, reasoning: 'Outlier opinion', cost: 0.01, evidence: [] }
+            ];
+            
+        case 'cost_optimization':
+            return [
+                { ...baseVote, agentId: 'expensive-1', agentName: 'Expensive Agent 1', recommendation: 'Option A', confidence: 0.95, reasoning: 'High-cost analysis', cost: 0.20 },
+                { ...baseVote, agentId: 'cheap-1', agentName: 'Cheap Agent 1', recommendation: 'Option A', confidence: 0.80, reasoning: 'Cost-effective analysis', cost: 0.02 },
+                { ...baseVote, agentId: 'cheap-2', agentName: 'Cheap Agent 2', recommendation: 'Option A', confidence: 0.75, reasoning: 'Cost-effective analysis', cost: 0.01 },
+                { ...baseVote, agentId: 'expensive-2', agentName: 'Expensive Agent 2', recommendation: 'Option B', confidence: 0.90, reasoning: 'Premium analysis', cost: 0.25 }
+            ];
+            
+        default:
+            return [
+                { ...baseVote, agentId: 'agent-1', agentName: 'Agent 1', recommendation: 'Option A', confidence: 0.8, reasoning: 'Default test', cost: 0.03 }
+            ];
     }
 }
 
