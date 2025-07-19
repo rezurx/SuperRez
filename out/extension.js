@@ -52,6 +52,8 @@ function activate(context) {
         vscode.commands.registerCommand('superrez.generatePrompt', () => generatePrompt()),
         vscode.commands.registerCommand('superrez.routeTask', () => routeTask()),
         vscode.commands.registerCommand('superrez.analyzePerformance', () => analyzePerformance()),
+        vscode.commands.registerCommand('superrez.testLocalAI', () => testLocalAI()),
+        vscode.commands.registerCommand('superrez.showLocalAI', () => showLocalAI()),
         vscode.commands.registerCommand('superrez.createMultiAITeam', () => createMultiAITeam()),
         vscode.commands.registerCommand('superrez.showTeamStatus', () => showTeamStatus()),
         vscode.commands.registerCommand('superrez.generateFromTemplate', () => generateFromTemplate()),
@@ -774,6 +776,40 @@ function createTestVotes(testType) {
             return [
                 { ...baseVote, agentId: 'agent-1', agentName: 'Agent 1', recommendation: 'Option A', confidence: 0.8, reasoning: 'Default test', cost: 0.03 }
             ];
+    }
+}
+async function testLocalAI() {
+    try {
+        vscode.window.showInformationMessage('Testing Local AI capability...');
+        const prompt = await vscode.window.showInputBox({
+            prompt: 'Enter a prompt to test Local AI',
+            placeHolder: 'e.g., Generate a simple function to calculate factorial'
+        });
+        if (!prompt)
+            return;
+        const result = await aiOrchestrator.generateWithLocalAI(prompt);
+        // Show result in new document
+        const doc = await vscode.workspace.openTextDocument({
+            content: `# Local AI Test Result\n\n**Prompt**: ${prompt}\n\n**Generated Code**:\n\n\`\`\`\n${result}\n\`\`\`\n\n**Cost**: $0.00 (Local AI)\n**Provider**: Mock Local AI for testing`,
+            language: 'markdown'
+        });
+        await vscode.window.showTextDocument(doc);
+        vscode.window.showInformationMessage('✅ Local AI test completed successfully!');
+    }
+    catch (error) {
+        vscode.window.showErrorMessage(`Local AI test failed: ${error}`);
+    }
+}
+async function showLocalAI() {
+    try {
+        const summary = await aiOrchestrator.getLocalAISummary();
+        const outputChannel = vscode.window.createOutputChannel('SuperRez Local AI');
+        outputChannel.clear();
+        outputChannel.appendLine(summary);
+        outputChannel.show();
+    }
+    catch (error) {
+        vscode.window.showErrorMessage(`Failed to show Local AI status: ${error}`);
     }
 }
 function deactivate() {

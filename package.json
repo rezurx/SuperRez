@@ -104,6 +104,16 @@
         "command": "superrez.testConsensusEngine",
         "title": "Test Consensus Engine",
         "category": "SuperRez"
+      },
+      {
+        "command": "superrez.testLocalAI",
+        "title": "Test Local AI",
+        "category": "SuperRez"
+      },
+      {
+        "command": "superrez.showLocalAI",
+        "title": "Show Local AI Status",
+        "category": "SuperRez"
       }
     ],
     "configuration": {

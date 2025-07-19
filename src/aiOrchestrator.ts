@@ -3,6 +3,7 @@ import { promisify } from 'util';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
+import { LocalAIManager } from './localAI';
 
 const execAsync = promisify(exec);
 
@@ -26,8 +27,10 @@ export interface TaskRoute {
 export class AIOrchestrator {
     private availableTools: AITool[] = [];
     private detectionComplete: boolean = false;
+    private localAIManager: LocalAIManager;
 
     constructor() {
+        this.localAIManager = new LocalAIManager();
         this.initializeToolDefinitions();
     }
 
@@ -86,6 +89,15 @@ export class AIOrchestrator {
                 strengths: ['IDE integration', 'context awareness', 'code editing'],
                 type: 'paid',
                 description: 'AI-powered code editor with context awareness'
+            },
+            {
+                name: 'Local AI (Mock)',
+                command: 'mock-local',
+                available: false,
+                costPerToken: 0.0,
+                strengths: ['zero cost', 'privacy', 'instant response', 'testing'],
+                type: 'free',
+                description: 'Mock local AI for testing and development'
             }
         ];
     }
@@ -95,11 +107,34 @@ export class AIOrchestrator {
             return this.availableTools.filter(tool => tool.available);
         }
 
+        // Check standard tools
         const detectionPromises = this.availableTools.map(tool => this.checkToolAvailability(tool));
         await Promise.all(detectionPromises);
         
+        // Check local AI providers
+        await this.detectLocalAIProviders();
+        
         this.detectionComplete = true;
         return this.availableTools.filter(tool => tool.available);
+    }
+
+    private async detectLocalAIProviders(): Promise<void> {
+        try {
+            const localProviders = await this.localAIManager.detectAvailableProviders();
+            
+            // Update availability for local AI tools
+            for (const tool of this.availableTools) {
+                if (tool.command === 'mock-local') {
+                    // Mock local AI is always available for testing
+                    tool.available = true;
+                } else if (tool.command === 'ollama') {
+                    // Check if Ollama provider is available
+                    tool.available = localProviders.some(p => p.name === 'Ollama');
+                }
+            }
+        } catch (error) {
+            console.error('Error detecting local AI providers:', error);
+        }
     }
 
     private async checkToolAvailability(tool: AITool): Promise<void> {
@@ -495,5 +530,20 @@ ${unavailableTools.map(tool => `
         }
 
         return 'Install free tools for maximum savings';
+    }
+
+    async generateWithLocalAI(prompt: string, provider?: string): Promise<string> {
+        try {
+            // Use mock local AI by default for demonstration
+            const selectedProvider = provider || 'mock-local';
+            const result = await this.localAIManager.generateCode(selectedProvider, prompt);
+            return result;
+        } catch (error) {
+            throw new Error(`Local AI generation failed: ${error}`);
+        }
+    }
+
+    async getLocalAISummary(): Promise<string> {
+        return await this.localAIManager.getProviderSummary();
     }
 }
