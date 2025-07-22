@@ -9,7 +9,7 @@ Cost-aware AI development assistant - Superior alternative to SuperClaude
 - **Project Discovery**: Automatically find projects with progress files
 - **Security Analysis**: Local vulnerability scanning without API costs
 - **Cost Tracking**: Monitor AI API usage and budget enforcement
-- **Multi-AI Support**: Works with Claude Code, Gemini CLI, Copilot, Ollama, and more
+- **Multi-AI Support**: Works with 7+ AI tools including Claude Code, Gemini CLI, Copilot, Ollama, Kimi K2
 
 ### **Phase 2: AI Orchestration (✅ Complete)**
 - **AI Tool Detection**: Automatically detect available AI tools
@@ -50,6 +50,16 @@ Cost-aware AI development assistant - Superior alternative to SuperClaude
 - `superrez.preferredAI`: Preferred AI tool (claude-code, gemini-cli, copilot, auto)
 - `superrez.showCostWarnings`: Show cost warnings before AI calls (default: true)
 
+### **Kimi K2 Setup (Optional)**
+To enable Kimi K2 integration:
+1. Get API key from [Moonshot AI Console](https://platform.moonshot.ai/console/api-keys)
+2. Add to your shell environment:
+   ```bash
+   export MOONSHOT_API_KEY="your-api-key-here"
+   ```
+3. Restart VSCode to detect Kimi K2 availability
+4. Verify with `SuperRez: Show AI Tools` command
+
 ## 🛡️ Local Analysis Capabilities
 
 ### **Security Scanner (FREE)**
@@ -74,13 +84,14 @@ Cost-aware AI development assistant - Superior alternative to SuperClaude
 - **Gemini CLI**: Cost-effective general purpose
 - **GitHub Copilot**: Superior code completion
 - **Ollama**: Free local models for privacy
-- **Kimi (Moonshot)**: Advanced coding capabilities
+- **Kimi K2 (Moonshot)**: Advanced coding capabilities with competitive pricing
 - **Cursor**: AI-powered IDE integration
+- **Local AI**: Zero-cost generation for unlimited usage
 
 ### **Smart Routing Logic**
-- **Analysis Tasks**: Claude Code → Ollama (free) → Gemini CLI
+- **Analysis Tasks**: Claude Code → Kimi K2 → Ollama (free) → Gemini CLI
 - **Code Completion**: GitHub Copilot → Cursor → Local models
-- **Code Generation**: Ollama (free) → Gemini CLI → Claude Code
+- **Code Generation**: Kimi K2 → Ollama (free) → Gemini CLI → Claude Code
 - **Security/Performance**: Built-in scanners (FREE) → AI backup
 
 ## 📊 Cost Savings

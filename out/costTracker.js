@@ -16,7 +16,7 @@ class CostTracker {
         this.costFile = path.join(context.globalStorageUri.fsPath, 'superrez-costs.json');
         this.loadCostData();
     }
-    estimateCost(prompt) {
+    estimateCost(prompt, toolName) {
         // Rough token estimation: ~4 characters per token
         const tokens = Math.ceil(prompt.length / 4);
         // Cost estimates per 1K tokens (as of 2024)
@@ -25,11 +25,35 @@ class CostTracker {
             'claude-3-haiku': 0.00025,
             'gpt-4': 0.03,
             'gpt-3.5-turbo': 0.002,
-            'gemini-pro': 0.001
+            'gemini-pro': 0.001,
+            'moonshot-v1-8k': 0.0015,
+            'kimi-k2': 0.015
         };
+        // If tool is specified, use its specific cost
+        if (toolName) {
+            const toolCost = this.getToolSpecificCost(toolName, costs);
+            if (toolCost !== null) {
+                return (tokens / 1000) * toolCost;
+            }
+        }
         // Use average cost for estimation
         const avgCost = Object.values(costs).reduce((a, b) => a + b, 0) / Object.values(costs).length;
         return (tokens / 1000) * avgCost;
+    }
+    getToolSpecificCost(toolName, costs) {
+        const toolMapping = {
+            'Claude Code': 'claude-3-sonnet',
+            'Gemini CLI': 'gemini-pro',
+            'GitHub Copilot': 'gpt-4',
+            'Kimi (Moonshot)': 'moonshot-v1-8k',
+            'Ollama': 'free',
+            'Local AI (Mock)': 'free'
+        };
+        const costKey = toolMapping[toolName];
+        if (costKey === 'free') {
+            return 0.0;
+        }
+        return costs[costKey] || null;
     }
     async recordCost(tool, tokens, cost, description) {
         const entry = {

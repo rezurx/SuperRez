@@ -152,6 +152,15 @@ class AIOrchestrator {
                         tool.available = false;
                     }
                     break;
+                case 'Kimi (Moonshot)':
+                    try {
+                        await execAsync('./kimi --version');
+                        tool.available = true;
+                    }
+                    catch {
+                        tool.available = false;
+                    }
+                    break;
                 case 'Cursor':
                     // Check if cursor is installed
                     try {
@@ -220,11 +229,19 @@ class AIOrchestrator {
                     }
                 }
                 const claude = paidTools.find(t => t.name === 'Claude Code');
+                const kimiAnalysis = paidTools.find(t => t.name === 'Kimi (Moonshot)');
                 if (claude) {
                     return {
                         primary: claude,
                         alternatives: [...freeTools, ...paidTools.filter(t => t.name !== 'Claude Code')],
                         rationale: 'Claude Code excels at analysis and reasoning tasks.'
+                    };
+                }
+                else if (kimiAnalysis) {
+                    return {
+                        primary: kimiAnalysis,
+                        alternatives: [...freeTools, ...paidTools.filter(t => t.name !== 'Kimi (Moonshot)')],
+                        rationale: 'Kimi K2 offers superior coding and algorithmic analysis capabilities.'
                     };
                 }
                 break;
@@ -249,7 +266,15 @@ class AIOrchestrator {
                     };
                 }
                 const gemini = paidTools.find(t => t.name === 'Gemini CLI');
-                if (gemini) {
+                const kimiGeneration = paidTools.find(t => t.name === 'Kimi (Moonshot)');
+                if (kimiGeneration) {
+                    return {
+                        primary: kimiGeneration,
+                        alternatives: [...freeTools, ...paidTools.filter(t => t.name !== 'Kimi (Moonshot)')],
+                        rationale: 'Kimi K2 excels at code generation with competitive pricing.'
+                    };
+                }
+                else if (gemini) {
                     return {
                         primary: gemini,
                         alternatives: [...freeTools, ...paidTools.filter(t => t.name !== 'Gemini CLI')],
@@ -416,6 +441,8 @@ ${unavailableTools.map(tool => `
                 return 'gh extension install github/gh-copilot';
             case 'Ollama':
                 return 'curl -fsSL https://ollama.ai/install.sh | sh';
+            case 'Kimi (Moonshot)':
+                return 'Set MOONSHOT_API_KEY environment variable from https://platform.moonshot.ai';
             case 'Cursor':
                 return 'Download from cursor.sh';
             default:

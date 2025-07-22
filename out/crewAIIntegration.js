@@ -133,15 +133,22 @@ class CrewAIIntegration {
                 preferredTool = 'local';
             }
             else {
-                // For creative tasks, prefer free tools, then cheapest paid
+                // For creative tasks, prefer free tools, then cost-effective paid tools
                 const freeTools = availableTools.filter(t => t.type === 'free');
                 const paidTools = availableTools.filter(t => t.type === 'paid');
                 if (freeTools.length > 0) {
                     preferredTool = freeTools[0].command;
                 }
                 else if (paidTools.length > 0) {
-                    const cheapest = paidTools.sort((a, b) => a.costPerToken - b.costPerToken)[0];
-                    preferredTool = cheapest.command;
+                    // Prefer Kimi for coding tasks, then cheapest option
+                    const kimi = paidTools.find(t => t.name === 'Kimi (Moonshot)');
+                    if (kimi && (agent.role.includes('Engineer') || agent.role.includes('Developer'))) {
+                        preferredTool = kimi.command;
+                    }
+                    else {
+                        const cheapest = paidTools.sort((a, b) => a.costPerToken - b.costPerToken)[0];
+                        preferredTool = cheapest.command;
+                    }
                 }
                 else {
                     preferredTool = 'local';
