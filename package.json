@@ -17,8 +17,32 @@
     "vscode": "^1.74.0"
   },
   "categories": [
-    "Other"
+    "Other",
+    "Machine Learning",
+    "Snippets",
+    "Linters"
   ],
+  "keywords": [
+    "ai",
+    "assistant",
+    "claude",
+    "gemini",
+    "copilot",
+    "cost-optimization",
+    "security",
+    "performance",
+    "analysis",
+    "multi-ai",
+    "local-first",
+    "budget",
+    "automation",
+    "productivity",
+    "development"
+  ],
+  "galleryBanner": {
+    "color": "#1e1e1e",
+    "theme": "dark"
+  },
   "activationEvents": [
     "onStartupFinished"
   ],

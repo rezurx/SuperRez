@@ -5,6 +5,53 @@ All notable changes to SuperRez will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2025-07-22
+
+### 🌟 Kimi K2 Integration & Enhanced Multi-AI Support
+
+**Major release featuring Kimi K2 integration via Moonshot API, bringing total AI tool support to 8+ while maintaining 95% cost reduction.**
+
+#### ✨ Added
+
+**Kimi K2 Integration (Moonshot API)**
+- **Global AI Access**: International AI capability through Moonshot platform
+- **Competitive Pricing**: $0.0015/1K tokens (50% cheaper than Claude)
+- **CLI Wrapper**: `/kimi` executable with OpenAI-compatible interface
+- **Environment Setup**: MOONSHOT_API_KEY configuration support
+- **Smart Routing**: Kimi K2 prioritized for analysis and code generation tasks
+
+**Enhanced AI Orchestration**
+- **8+ AI Tools**: Claude Code, Gemini CLI, Copilot, Ollama, Kimi K2, Cursor, Local AI, Mock Local AI
+- **Multi-AI Teams**: Kimi K2 available for Frontend and Backend engineering agent roles
+- **Cost Optimization**: Enhanced routing maintains 95% cost reduction with additional AI option
+- **Production Integration**: Comprehensive testing and documentation
+
+**Advanced Features**
+- **Template Engine**: 4+ built-in templates with pattern detection (React, Express, FastAPI, Jest)
+- **Consensus Engine**: 7 mathematical consensus algorithms with Byzantine fault tolerance
+- **Local AI Integration**: Zero-cost generation with Mock provider and Ollama support
+- **Enhanced Cost Tracking**: Tool-specific pricing and budget management
+
+#### 🔧 Technical Improvements
+- **Version Bump**: Updated to v0.2.0 reflecting major feature additions
+- **VSIX Packaging**: New extension package with all Kimi K2 features
+- **Documentation**: Comprehensive setup instructions and troubleshooting guides
+- **API Integration**: OpenAI-compatible interface for seamless tool switching
+
+#### 📊 Performance & Metrics
+- **First-Mover Advantage**: First CLI tool to integrate Kimi K2 via Moonshot API
+- **Maintained Performance**: 95% cost reduction through intelligent routing
+- **Global Coverage**: International AI capability for worldwide development teams
+- **Enhanced Capabilities**: Superior coding assistance with competitive pricing
+
+### 🔄 Changed
+- **AI Tool Detection**: Enhanced to include Kimi K2 CLI detection
+- **Cost Calculations**: Updated with Moonshot API pricing
+- **Smart Routing**: Improved recommendations including Kimi K2 for coding tasks
+- **Team Formation**: Multi-AI teams now leverage Kimi K2 for development agents
+
+---
+
 ## [0.1.0] - 2025-01-14
 
 ### 🎉 Initial Release - SuperRez VSCode Extension

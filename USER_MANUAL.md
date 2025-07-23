@@ -1,7 +1,7 @@
 # SuperRez User Manual
 
-**Version**: 0.1.0 + Phase 4.1 Template Engine  
-**Last Updated**: 2025-01-18  
+**Version**: 0.2.0 (Phase 4.4 - Kimi K2 Integration)  
+**Last Updated**: 2025-07-22  
 **Target**: Users, Contributors, and Future Development Reference
 
 ---
@@ -1023,4 +1023,4 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 
 **Repository**: https://github.com/rezurx/SuperRez  
 **License**: MIT  
-**Version**: 0.1.0 + Phase 4.1 Template Engine
+**Version**: 0.2.0 (Phase 4.4 - Kimi K2 Integration)
