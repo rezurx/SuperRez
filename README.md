@@ -129,6 +129,7 @@ To enable Kimi K2 integration:
 
 ## 🚀 Getting Started
 
+### **VSCode Extension** 
 1. **Install SuperRez** from VSCode marketplace
 2. **Open Command Palette** (Ctrl+Shift+P)
 3. **Run** `SuperRez: Start Session`
@@ -136,6 +137,30 @@ To enable Kimi K2 integration:
 5. **Analyze locally** with `SuperRez: Analyze Security` or `SuperRez: Analyze Performance`
 6. **Generate smart prompts** with `SuperRez: Generate Smart Prompt`
 7. **End session** with `SuperRez: End Session` for progress updates
+
+### **SuperRez CLI** (NEW! 🎉)
+Professional command-line interface with 95% cost reduction
+
+```bash
+# Get the CLI
+git clone https://github.com/rezurx/SuperRez-CLI.git
+cd SuperRez-CLI && npm install && npm run build
+
+# Interactive mode (recommended)
+node dist/index.js interactive
+
+# Direct commands  
+node dist/index.js start myproject
+node dist/index.js analyze --all
+node dist/index.js ai --tools
+```
+
+**CLI Features:**
+- 🖥️ **Interactive REPL** with tab completion
+- 🎨 **Rich terminal UI** with progress indicators  
+- 🔍 **Same analysis engines** as VSCode extension
+- 💰 **Same cost optimization** (95% reduction)
+- 🚀 **Works anywhere** - no VSCode required
 
 ## 🎯 Success Metrics
 
