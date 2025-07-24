@@ -1,7 +1,7 @@
 # SuperRez User Manual
 
-**Version**: 0.2.0 (Phase 4.4 - Kimi K2 Integration)  
-**Last Updated**: 2025-07-22  
+**Version**: 0.2.0 (Phase 5.2 - CLI Interactive Mode)  
+**Last Updated**: 2025-07-24  
 **Target**: Users, Contributors, and Future Development Reference
 
 ---
@@ -10,14 +10,15 @@
 
 1. [Quick Start Guide](#quick-start-guide)
 2. [Installation & Setup](#installation--setup)
-3. [Core Features](#core-features)
-4. [Command Reference](#command-reference)
-5. [Template Engine Guide](#template-engine-guide)
-6. [AI Tool Integration](#ai-tool-integration)
-7. [Cost Management](#cost-management)
-8. [Troubleshooting](#troubleshooting)
-9. [Advanced Usage](#advanced-usage)
-10. [Development Reference](#development-reference)
+3. [SuperRez CLI Interactive Mode](#superrez-cli-interactive-mode)
+4. [Core Features](#core-features)
+5. [Command Reference](#command-reference)
+6. [Template Engine Guide](#template-engine-guide)
+7. [AI Tool Integration](#ai-tool-integration)
+8. [Cost Management](#cost-management)
+9. [Troubleshooting](#troubleshooting)
+10. [Advanced Usage](#advanced-usage)
+11. [Development Reference](#development-reference)
 
 ---
 
@@ -73,8 +74,105 @@ npm run compile
 
 ### **Verify Installation**
 1. **Check Status Bar**: Look for "⚡ SuperRez" 
-2. **Command Palette**: Type "SuperRez" - should show 14 commands
+2. **Command Palette**: Type "SuperRez" - should show 18 commands
 3. **Test Command**: Run `SuperRez: Show Status`
+
+---
+
+## 🖥️ SuperRez CLI Interactive Mode
+
+**NEW in Phase 5.2**: Professional command-line interface with 95% cost reduction
+
+### **🚀 CLI Installation**
+```bash
+# Clone the CLI repository
+git clone https://github.com/rezurx/SuperRez-CLI.git
+cd SuperRez-CLI
+
+# Install dependencies and build
+npm install
+npm run build
+
+# Run directly or install globally
+node dist/index.js --help
+# OR install globally (future)
+npm install -g superrez-cli
+```
+
+### **💻 Interactive Mode Features**
+
+#### **Professional REPL Interface**
+```bash
+# Start interactive mode
+superrez interactive
+
+╔══════════════════════════════════════════════════════════════╗
+║               🚀 SuperRez Interactive Mode                   ║
+║     Cost-aware AI development assistant CLI v1.0.0          ║
+╚══════════════════════════════════════════════════════════════╝
+
+📁 Active Session: myproject
+💰 Budget: $0.00/$50.00 (100% remaining)
+
+SuperRez > _
+```
+
+#### **Tab Completion System**
+- **Commands**: `st[TAB]` → `start`
+- **Subcommands**: `analyze [TAB]` → `security`, `performance`, `all`  
+- **AI Options**: `ai [TAB]` → `tools`, `route`, `prompt`
+- **Projects**: `start [TAB]` → Auto-complete project names
+
+#### **Rich Terminal UI**
+- **Progress Indicators**: Real-time spinners for operations
+- **Color-Coded Status**: Green/yellow/red for budget levels
+- **Live Updates**: Session and budget status refresh automatically
+- **Error Handling**: User-friendly error messages with suggestions
+
+### **🎯 CLI vs VSCode Extension**
+
+| Feature | VSCode Extension | CLI Interactive Mode |
+|---------|------------------|---------------------|
+| **Session Management** | ✅ 18 commands | ✅ All commands available |
+| **Local Analysis** | ✅ Security + Performance | ✅ Security + Performance |
+| **AI Orchestration** | ✅ 8+ AI tools | ✅ 8+ AI tools |
+| **Cost Tracking** | ✅ Budget enforcement | ✅ Budget enforcement |
+| **User Interface** | VSCode integration | Rich terminal UI |
+| **Tab Completion** | N/A | ✅ Full auto-completion |
+| **Portability** | Requires VSCode | ✅ Works anywhere |
+
+### **🔧 CLI Command Examples**
+
+#### **Interactive Session Workflow**
+```bash
+SuperRez > start myproject        # Start session with tab completion
+- Starting session...
+✓ Session started successfully
+
+SuperRez > analyze all           # Run comprehensive analysis (FREE)
+- Running comprehensive analysis...
+✓ All analyses completed
+
+SuperRez > ai tools              # Show available AI tools  
+- Loading AI tools...
+✓ Found: Claude Code, Gemini CLI, Ollama, Kimi K2
+
+SuperRez > status                # Check session and budget
+📁 Active Session: myproject
+💰 Budget: $0.00/$50.00 (100% remaining)
+
+SuperRez > exit                  # Exit gracefully
+👋 Goodbye! SuperRez session ended.
+```
+
+#### **Direct CLI Commands**
+```bash
+# Use without interactive mode
+superrez start myproject         # Start session
+superrez analyze --security      # Security scan (FREE)
+superrez ai --tools               # Show AI tools
+superrez status                   # Show status
+```
 
 ---
 
