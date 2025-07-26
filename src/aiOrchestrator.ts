@@ -563,6 +563,12 @@ ${unavailableTools.map(tool => `
         try {
             // Use mock local AI by default for demonstration
             const selectedProvider = provider || 'mock-local';
+            
+            // If using mock provider, generate contextual mock response
+            if (selectedProvider === 'mock-local') {
+                return this.generateMockResponse(prompt);
+            }
+            
             const result = await this.localAIManager.generateCode(selectedProvider, prompt);
             return result;
         } catch (error) {
@@ -570,7 +576,221 @@ ${unavailableTools.map(tool => `
         }
     }
 
+    private generateMockResponse(prompt: string): string {
+        // Generate intelligent mock responses based on prompt content
+        const lowerPrompt = prompt.toLowerCase();
+
+        if (lowerPrompt.includes('explain') || lowerPrompt.includes('what is')) {
+            return this.getMockExplanation(prompt);
+        }
+        
+        if (lowerPrompt.includes('debug') || lowerPrompt.includes('error') || lowerPrompt.includes('fix')) {
+            return this.getMockDebuggingAdvice(prompt);
+        }
+        
+        if (lowerPrompt.includes('optimize') || lowerPrompt.includes('improve') || lowerPrompt.includes('performance')) {
+            return this.getMockOptimizationAdvice(prompt);
+        }
+        
+        if (lowerPrompt.includes('refactor') || lowerPrompt.includes('restructure')) {
+            return this.getMockRefactoringAdvice(prompt);
+        }
+
+        if (lowerPrompt.includes('memecoin') || lowerPrompt.includes('trading') || lowerPrompt.includes('crypto')) {
+            return this.getMockCryptoAdvice(prompt);
+        }
+
+        if (lowerPrompt.includes('security') || lowerPrompt.includes('vulnerability')) {
+            return this.getMockSecurityAdvice(prompt);
+        }
+
+        // Default response
+        return `I understand you're asking about: "${prompt.substring(0, 100)}${prompt.length > 100 ? '...' : ''}"\n\n` +
+               `This is a mock response from SuperRez Extension. In the full version, I would:\n\n` +
+               `• Analyze your request in detail\n` +
+               `• Provide specific, actionable advice\n` +
+               `• Include code examples if relevant\n` +
+               `• Suggest best practices\n\n` +
+               `To enable real AI responses, configure your API keys in the extension settings.\n\n` +
+               `💡 Pro tip: Use the FREE analysis commands for immediate value!`;
+    }
+
+    private getMockExplanation(prompt: string): string {
+        return `Here's an explanation of your request:\n\n` +
+               `**Overview:** This appears to be asking for clarification on a technical concept.\n\n` +
+               `**Key Points:**\n` +
+               `• The topic involves understanding core principles\n` +
+               `• There are likely multiple approaches to consider\n` +
+               `• Best practices should be followed\n\n` +
+               `**Recommendation:** For detailed explanations, consider enabling real AI integration.\n\n` +
+               `Use the extension settings to configure your preferred AI tool.`;
+    }
+
+    private getMockDebuggingAdvice(prompt: string): string {
+        return `🐛 **Debugging Analysis**\n\n` +
+               `Based on your request, here's a systematic debugging approach:\n\n` +
+               `**1. Problem Identification**\n` +
+               `• Check console/logs for error messages\n` +
+               `• Identify when the issue started\n` +
+               `• Reproduce the issue consistently\n\n` +
+               `**2. Common Solutions**\n` +
+               `• Verify dependencies are installed\n` +
+               `• Check environment variables\n` +
+               `• Review recent changes\n\n` +
+               `**3. Next Steps**\n` +
+               `• Use SuperRez's FREE security scanner\n` +
+               `• Enable real AI for detailed debugging help\n\n` +
+               `💡 The FREE security and performance analysis might catch your issue!`;
+    }
+
+    private getMockOptimizationAdvice(prompt: string): string {
+        return `⚡ **Optimization Recommendations**\n\n` +
+               `For optimization requests, I typically analyze:\n\n` +
+               `**Performance Areas:**\n` +
+               `• Algorithm efficiency (O notation)\n` +
+               `• Memory usage patterns\n` +
+               `• I/O operations and caching\n` +
+               `• Database query optimization\n\n` +
+               `**Quick Wins:**\n` +
+               `• Use SuperRez's FREE performance analyzer\n` +
+               `• Profile your code to find bottlenecks\n` +
+               `• Consider async/await for I/O operations\n\n` +
+               `**Pro Tip:** The built-in performance analyzer can identify many issues without any cost!`;
+    }
+
+    private getMockRefactoringAdvice(prompt: string): string {
+        return `🔧 **Refactoring Suggestions**\n\n` +
+               `Good refactoring focuses on:\n\n` +
+               `**Code Structure:**\n` +
+               `• Single Responsibility Principle\n` +
+               `• DRY (Don't Repeat Yourself)\n` +
+               `• Clear naming conventions\n\n` +
+               `**Recommended Approach:**\n` +
+               `• Start with SuperRez's FREE code analysis\n` +
+               `• Break large functions into smaller ones\n` +
+               `• Extract common logic into utilities\n\n` +
+               `**Templates Available:**\n` +
+               `Use SuperRez templates to see refactoring patterns and clean code examples.`;
+    }
+
+    private getMockCryptoAdvice(prompt: string): string {
+        return `🚀 **Crypto/Trading Analysis**\n\n` +
+               `For cryptocurrency and trading projects:\n\n` +
+               `**Security First:**\n` +
+               `• Never expose private keys\n` +
+               `• Use testnet for development\n` +
+               `• Implement proper error handling\n\n` +
+               `**Trading Bot Best Practices:**\n` +
+               `• Start with paper trading\n` +
+               `• Implement risk management\n` +
+               `• Monitor API rate limits\n\n` +
+               `**Memecoin Specific:**\n` +
+               `• High volatility requires careful position sizing\n` +
+               `• Real-time data is crucial\n` +
+               `• Consider slippage in calculations\n\n` +
+               `💡 I can see this might be related to a trading project! Use real AI for detailed strategy advice.`;
+    }
+
+    private getMockSecurityAdvice(prompt: string): string {
+        return `🔒 **Security Analysis**\n\n` +
+               `For security-related requests:\n\n` +
+               `**Common Vulnerabilities:**\n` +
+               `• SQL injection (parameterized queries)\n` +
+               `• XSS attacks (input sanitization)\n` +
+               `• Authentication bypass\n` +
+               `• Insecure data storage\n\n` +
+               `**Recommended Actions:**\n` +
+               `• Use SuperRez's FREE security scanner\n` +
+               `• Follow OWASP guidelines\n` +
+               `• Regular dependency updates\n\n` +
+               `**Pro Tip:** The built-in security scanner can identify many vulnerabilities for FREE!`;
+    }
+
     async getLocalAISummary(): Promise<string> {
         return await this.localAIManager.getProviderSummary();
+    }
+
+    // Enhanced routing for better tool selection
+    async routeRequest(request: string): Promise<string> {
+        const lowerRequest = request.toLowerCase();
+        
+        if (lowerRequest.includes('free') || lowerRequest.includes('local') || lowerRequest.includes('cost')) {
+            return 'For cost-free analysis, use: security scanner, performance analyzer, or local tools';
+        }
+        
+        if (lowerRequest.includes('best') || lowerRequest.includes('cheapest')) {
+            const available = await this.detectAvailableTools();
+            if (available.length === 0) {
+                return 'No AI tools configured. Install Ollama for free local AI or configure API keys.';
+            }
+            
+            const cheapest = available.reduce((prev, curr) => 
+                prev.costPerToken < curr.costPerToken ? prev : curr
+            );
+            
+            return `Best available tool: ${cheapest.name} (${cheapest.costPerToken === 0 ? 'FREE' : '$' + cheapest.costPerToken + '/1K tokens'})`;
+        }
+        
+        return 'Use specific commands like "analyze", "generate", or natural language requests.';
+    }
+
+    // Check availability of specific tools
+    async checkToolAvailability(): Promise<{ [key: string]: boolean }> {
+        const status: { [key: string]: boolean } = {};
+        
+        for (const tool of this.availableTools) {
+            await this.checkToolAvailability(tool);
+            status[tool.name] = tool.available;
+        }
+        
+        return status;
+    }
+
+    // Get routing suggestions for different types of requests
+    getRoutingSuggestions(request: string): { tool: string; reason: string; cost: string }[] {
+        const suggestions = [];
+        
+        // Always suggest free options first
+        suggestions.push({
+            tool: 'Free Analysis',
+            reason: 'Use built-in security/performance scanners',
+            cost: '$0.00'
+        });
+        
+        const available = this.availableTools.filter(t => t.available);
+        
+        if (available.find(t => t.name === 'Ollama')) {
+            suggestions.push({
+                tool: 'Ollama (Local)',
+                reason: 'Free local AI, good for general questions',
+                cost: '$0.00'
+            });
+        }
+        
+        if (available.find(t => t.name === 'Gemini CLI')) {
+            suggestions.push({
+                tool: 'Gemini CLI',
+                reason: 'Cost-effective for most AI tasks',
+                cost: '~$0.001'
+            });
+        }
+        
+        if (available.find(t => t.name === 'Kimi (Moonshot)')) {
+            suggestions.push({
+                tool: 'Kimi (Moonshot)',
+                reason: 'Superior coding capabilities',
+                cost: '~$0.0015'
+            });
+        }
+        
+        if (available.find(t => t.name === 'Claude Code')) {
+            suggestions.push({
+                tool: 'Claude Code',
+                reason: 'Premium quality, best for complex analysis',
+                cost: '~$0.003'
+            });
+        }
+        
+        return suggestions;
     }
 }

@@ -61,7 +61,10 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.commands.registerCommand('superrez.generateFromTemplate', () => generateFromTemplate()),
         vscode.commands.registerCommand('superrez.manageTemplates', () => manageTemplates()),
         vscode.commands.registerCommand('superrez.runConsensusAnalysis', () => runConsensusAnalysis()),
-        vscode.commands.registerCommand('superrez.testConsensusEngine', () => testConsensusEngine())
+        vscode.commands.registerCommand('superrez.testConsensusEngine', () => testConsensusEngine()),
+        vscode.commands.registerCommand('superrez.showBudgetStatus', () => showBudgetStatus()),
+        vscode.commands.registerCommand('superrez.setBudget', () => setBudget()),
+        vscode.commands.registerCommand('superrez.quickAIRequest', () => quickAIRequest())
     ];
 
     context.subscriptions.push(...commands);
@@ -928,8 +931,97 @@ async function showLocalAI() {
     }
 }
 
+async function showBudgetStatus() {
+    try {
+        await costTracker.showBudgetReport();
+    } catch (error) {
+        vscode.window.showErrorMessage(`Failed to show budget status: ${error}`);
+    }
+}
+
+async function setBudget() {
+    try {
+        const currentBudget = costTracker.getMonthlyBudget();
+        const input = await vscode.window.showInputBox({
+            prompt: 'Set monthly budget (USD)',
+            placeHolder: 'Enter budget amount (e.g., 50.00)',
+            value: currentBudget.toString(),
+            validateInput: (value) => {
+                const num = parseFloat(value);
+                if (isNaN(num) || num <= 0) {
+                    return 'Please enter a valid positive number';
+                }
+                return null;
+            }
+        });
+
+        if (input) {
+            const budget = parseFloat(input);
+            await costTracker.setMonthlyBudget(budget);
+            updateStatusBar();
+        }
+    } catch (error) {
+        vscode.window.showErrorMessage(`Failed to set budget: ${error}`);
+    }
+}
+
+async function quickAIRequest() {
+    try {
+        const prompt = await vscode.window.showInputBox({
+            prompt: 'Enter your AI request',
+            placeHolder: 'e.g., "Explain this function", "Help me debug this error"'
+        });
+
+        if (!prompt) return;
+
+        // Get available tools
+        const tools = await aiOrchestrator.detectAvailableTools();
+        
+        if (tools.length === 0) {
+            vscode.window.showWarningMessage('No AI tools available. Install Ollama for free local AI or configure API keys.');
+            return;
+        }
+
+        // Check budget for paid tools
+        const estimatedCost = costTracker.estimateCost(prompt);
+        if (estimatedCost > 0) {
+            const canAfford = await costTracker.checkBudget(estimatedCost);
+            if (!canAfford) {
+                return;
+            }
+        }
+
+        // Get session context
+        const context = await sessionManager.getCurrentContext();
+        const fullPrompt = context ? `${context}\n\nUser request: ${prompt}` : prompt;
+
+        // Use mock AI for demonstration
+        const response = await aiOrchestrator.generateWithLocalAI(fullPrompt, 'mock-local');
+
+        // Record cost if applicable
+        if (estimatedCost > 0) {
+            await costTracker.recordCost(estimatedCost, 'Quick AI Request', 'mock');
+        }
+
+        // Show result in new document
+        const doc = await vscode.workspace.openTextDocument({
+            content: `# SuperRez AI Response\n\n**Your Question**: ${prompt}\n\n**AI Response**:\n\n${response}\n\n---\n\n*Cost: ${estimatedCost > 0 ? '$' + estimatedCost.toFixed(3) : 'FREE'} • Remaining Budget: $${costTracker.getRemainingBudget().toFixed(2)}*`,
+            language: 'markdown'
+        });
+
+        await vscode.window.showTextDocument(doc);
+        updateStatusBar();
+
+    } catch (error) {
+        vscode.window.showErrorMessage(`AI request failed: ${error}`);
+    }
+}
+
 export function deactivate() {
     if (statusBarItem) {
         statusBarItem.dispose();
+    }
+    if (costTracker) {
+        costTracker.dispose();
     }
 }

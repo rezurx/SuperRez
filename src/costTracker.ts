@@ -1,13 +1,21 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as os from 'os';
 
 export interface CostEntry {
-    timestamp: string;
-    tool: string;
-    tokens: number;
-    cost: number;
+    timestamp: Date;
+    amount: number;
     description: string;
+    aiTool: string;
+    tokens?: number;
+}
+
+export interface BudgetConfig {
+    monthlyBudget: number;
+    currentMonth: string;
+    totalSpent: number;
+    entries: CostEntry[];
 }
 
 export interface BudgetStatus {
@@ -15,115 +23,134 @@ export interface BudgetStatus {
     spent: number;
     remaining: number;
     currentMonth: string;
+    percentage: number;
+    entries: CostEntry[];
 }
 
 export class CostTracker {
-    private costFile: string;
-    private costData: {
-        monthly_budget: number;
-        current_month: string;
-        spent: number;
-        calls: CostEntry[];
-    } = {
-        monthly_budget: 50.0,
-        current_month: new Date().toISOString().substring(0, 7),
-        spent: 0.0,
-        calls: []
-    };
+    private configPath: string;
+    private budget: BudgetConfig;
+    private statusBarItem: vscode.StatusBarItem;
 
     constructor(private context: vscode.ExtensionContext) {
-        this.costFile = path.join(context.globalStorageUri.fsPath, 'superrez-costs.json');
-        this.loadCostData();
+        this.configPath = path.join(os.homedir(), '.superrez', 'extension-budget.json');
+        this.budget = this.getDefaultBudget();
+        this.statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
+        this.loadBudget();
+        this.updateStatusBar();
+        this.statusBarItem.show();
     }
 
-    estimateCost(prompt: string, toolName?: string): number {
-        // Rough token estimation: ~4 characters per token
-        const tokens = Math.ceil(prompt.length / 4);
+    private getDefaultBudget(): BudgetConfig {
+        return {
+            monthlyBudget: 50.0,
+            currentMonth: this.getCurrentMonth(),
+            totalSpent: 0,
+            entries: []
+        };
+    }
+
+    private getCurrentMonth(): string {
+        const now = new Date();
+        return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    }
+
+    estimateCost(prompt: string, aiTool: string = 'claude'): number {
+        const tokens = this.estimateTokens(prompt);
         
-        // Cost estimates per 1K tokens (as of 2024)
-        const costs = {
-            'claude-3-sonnet': 0.003,
-            'claude-3-haiku': 0.00025,
-            'gpt-4': 0.03,
-            'gpt-3.5-turbo': 0.002,
-            'gemini-pro': 0.001,
-            'moonshot-v1-8k': 0.0015,
-            'kimi-k2': 0.015
+        const pricing = {
+            'claude': { input: 0.003, output: 0.015 }, // per 1K tokens
+            'gpt-4': { input: 0.030, output: 0.060 },
+            'gpt-3.5': { input: 0.0015, output: 0.002 },
+            'gemini': { input: 0.00025, output: 0.0005 },
+            'moonshot': { input: 0.0015, output: 0.0015 },
+            'kimi-k2': { input: 0.015, output: 0.015 },
+            'ollama': { input: 0, output: 0 }, // Free local
+            'mock': { input: 0, output: 0 } // Free mock responses
         };
 
-        // If tool is specified, use its specific cost
-        if (toolName) {
-            const toolCost = this.getToolSpecificCost(toolName, costs);
-            if (toolCost !== null) {
-                return (tokens / 1000) * toolCost;
-            }
-        }
-
-        // Use average cost for estimation
-        const avgCost = Object.values(costs).reduce((a, b) => a + b, 0) / Object.values(costs).length;
-        return (tokens / 1000) * avgCost;
+        const tool = pricing[aiTool as keyof typeof pricing] || pricing['claude'];
+        const inputCost = (tokens / 1000) * tool.input;
+        const outputCost = (tokens / 1000) * tool.output; // Assume similar output length
+        
+        return inputCost + outputCost;
     }
 
-    private getToolSpecificCost(toolName: string, costs: { [key: string]: number }): number | null {
-        const toolMapping: { [key: string]: string } = {
-            'Claude Code': 'claude-3-sonnet',
-            'Gemini CLI': 'gemini-pro', 
-            'GitHub Copilot': 'gpt-4',
-            'Kimi (Moonshot)': 'moonshot-v1-8k',
-            'Ollama': 'free',
-            'Local AI (Mock)': 'free'
-        };
-
-        const costKey = toolMapping[toolName];
-        if (costKey === 'free') {
-            return 0.0;
-        }
-        return costs[costKey] || null;
+    private estimateTokens(text: string): number {
+        // Rough estimation: ~4 characters per token
+        return Math.ceil(text.length / 4);
     }
 
-    async recordCost(tool: string, tokens: number, cost: number, description: string): Promise<void> {
+    async recordCost(amount: number, description: string, aiTool: string, tokens?: number): Promise<void> {
+        await this.resetIfNewMonth();
+        
         const entry: CostEntry = {
-            timestamp: new Date().toISOString(),
-            tool,
-            tokens,
-            cost,
-            description
+            timestamp: new Date(),
+            amount,
+            description,
+            aiTool,
+            tokens
         };
 
-        this.costData.calls.push(entry);
-        this.costData.spent += cost;
+        this.budget.entries.push(entry);
+        this.budget.totalSpent += amount;
         
-        await this.saveCostData();
-        
-        // Check if budget exceeded
-        if (this.costData.spent > this.costData.monthly_budget) {
+        await this.saveBudget();
+        this.updateStatusBar();
+
+        // Show warning if approaching budget limit
+        if (this.shouldWarnBudget()) {
+            const remaining = this.getRemainingBudget();
             vscode.window.showWarningMessage(
-                `⚠️ Monthly budget exceeded! Spent: $${this.costData.spent.toFixed(2)} / $${this.costData.monthly_budget.toFixed(2)}`,
+                `⚠️ SuperRez Budget Warning: Only $${remaining.toFixed(2)} remaining this month!`,
                 'View Details'
-            );
+            ).then((choice) => {
+                if (choice === 'View Details') {
+                    this.showBudgetReport();
+                }
+            });
         }
     }
 
     getBudgetStatus(): BudgetStatus {
-        const currentMonth = new Date().toISOString().substring(0, 7);
+        const remaining = this.getRemainingBudget();
+        const percentage = (this.budget.totalSpent / this.budget.monthlyBudget) * 100;
         
-        // Reset if new month
-        if (this.costData.current_month !== currentMonth) {
-            this.costData.current_month = currentMonth;
-            this.costData.spent = 0;
-            this.costData.calls = [];
-            this.saveCostData();
-        }
-
         return {
-            budget: this.costData.monthly_budget,
-            spent: this.costData.spent,
-            remaining: this.costData.monthly_budget - this.costData.spent,
-            currentMonth: this.costData.current_month
+            budget: this.budget.monthlyBudget,
+            spent: this.budget.totalSpent,
+            remaining,
+            currentMonth: this.budget.currentMonth,
+            percentage,
+            entries: [...this.budget.entries].reverse() // Most recent first
         };
     }
 
+    getRemainingBudget(): number {
+        return Math.max(0, this.budget.monthlyBudget - this.budget.totalSpent);
+    }
+
+    getTotalSpent(): number {
+        return this.budget.totalSpent;
+    }
+
+    getMonthlyBudget(): number {
+        return this.budget.monthlyBudget;
+    }
+
+    async setMonthlyBudget(amount: number): Promise<void> {
+        this.budget.monthlyBudget = amount;
+        await this.saveBudget();
+        this.updateStatusBar();
+        
+        vscode.window.showInformationMessage(
+            `💰 SuperRez: Monthly budget updated to $${amount.toFixed(2)}`
+        );
+    }
+
     async checkBudget(estimatedCost: number): Promise<boolean> {
+        await this.resetIfNewMonth();
+        
         const config = vscode.workspace.getConfiguration('superrez');
         const showWarnings = config.get<boolean>('showCostWarnings', true);
         
@@ -131,14 +158,13 @@ export class CostTracker {
             return true;
         }
 
-        const status = this.getBudgetStatus();
-        const newTotal = status.spent + estimatedCost;
+        const newTotal = this.budget.totalSpent + estimatedCost;
         
-        if (newTotal > status.budget) {
+        if (newTotal > this.budget.monthlyBudget) {
             const choice = await vscode.window.showWarningMessage(
                 `This operation would exceed your monthly budget!\n` +
-                `Current: $${status.spent.toFixed(2)} + $${estimatedCost.toFixed(2)} = $${newTotal.toFixed(2)}\n` +
-                `Budget: $${status.budget.toFixed(2)}`,
+                `Current: $${this.budget.totalSpent.toFixed(2)} + $${estimatedCost.toFixed(2)} = $${newTotal.toFixed(2)}\n` +
+                `Budget: $${this.budget.monthlyBudget.toFixed(2)}`,
                 'Proceed Anyway',
                 'Cancel'
             );
@@ -146,11 +172,11 @@ export class CostTracker {
             return choice === 'Proceed Anyway';
         }
 
-        if (newTotal > status.budget * 0.8) {
+        if (newTotal > this.budget.monthlyBudget * 0.8) {
             const choice = await vscode.window.showWarningMessage(
                 `You're approaching your monthly budget limit!\n` +
-                `Current: $${status.spent.toFixed(2)} + $${estimatedCost.toFixed(2)} = $${newTotal.toFixed(2)}\n` +
-                `Budget: $${status.budget.toFixed(2)}`,
+                `Current: $${this.budget.totalSpent.toFixed(2)} + $${estimatedCost.toFixed(2)} = $${newTotal.toFixed(2)}\n` +
+                `Budget: $${this.budget.monthlyBudget.toFixed(2)}`,
                 'Proceed',
                 'Cancel'
             );
@@ -163,81 +189,189 @@ export class CostTracker {
 
     getMonthlyReport(): string {
         const status = this.getBudgetStatus();
-        const calls = this.costData.calls;
+        const breakdown = this.getCostBreakdown();
         
-        const report = `# SuperRez Monthly Cost Report
-
-**Month:** ${status.currentMonth}
-**Budget:** $${status.budget.toFixed(2)}
-**Spent:** $${status.spent.toFixed(2)}
-**Remaining:** $${status.remaining.toFixed(2)}
-
-## Usage by Tool
-${this.getToolUsage()}
-
-## Recent Calls
-${calls.slice(-10).map(call => 
-    `- ${call.timestamp.substring(0, 16)} - ${call.tool} - $${call.cost.toFixed(3)} - ${call.description}`
-).join('\n')}
-
-## Cost-Saving Tips
-- Use local security analysis (FREE)
-- Prefer shorter prompts when possible
-- Use free tools like Ollama for routine tasks
-- Batch similar requests together
-`;
-
+        let report = `# 💰 SuperRez Monthly Cost Report (${status.currentMonth})\n\n`;
+        report += `**Total Budget:** $${status.budget.toFixed(2)}\n`;
+        report += `**Spent:** $${status.spent.toFixed(2)}\n`;
+        report += `**Remaining:** $${status.remaining.toFixed(2)}\n`;
+        report += `**Usage:** ${status.percentage.toFixed(1)}%\n\n`;
+        
+        if (Object.keys(breakdown).length > 0) {
+            report += `## 📊 Cost Breakdown by AI Tool\n`;
+            for (const [tool, data] of Object.entries(breakdown)) {
+                report += `- **${tool}:** $${data.total.toFixed(3)} (${data.count} calls, avg: $${data.average.toFixed(3)})\n`;
+            }
+            report += '\n';
+        }
+        
+        if (status.entries.length > 0) {
+            report += `## 📋 Recent Transactions (last 10)\n`;
+            status.entries.slice(0, 10).forEach((entry, index) => {
+                const date = entry.timestamp.toLocaleDateString();
+                const time = entry.timestamp.toLocaleTimeString();
+                report += `${index + 1}. $${entry.amount.toFixed(3)} - ${entry.description} (${entry.aiTool}) - ${date} ${time}\n`;
+            });
+            report += '\n';
+        }
+        
+        report += `## 💡 Cost-Saving Tips\n`;
+        report += `- Use local security analysis (FREE)\n`;
+        report += `- Prefer shorter prompts when possible\n`;
+        report += `- Use free tools like Ollama for routine tasks\n`;
+        report += `- Batch similar requests together\n`;
+        report += `- Use mock mode for testing and development\n`;
+        
         return report;
     }
 
-    private getToolUsage(): string {
-        const toolStats = this.costData.calls.reduce((acc, call) => {
-            if (!acc[call.tool]) {
-                acc[call.tool] = { cost: 0, count: 0 };
+    // Get cost breakdown by AI tool
+    getCostBreakdown(): Record<string, { total: number; count: number; average: number }> {
+        const breakdown: Record<string, { total: number; count: number; average: number }> = {};
+        
+        for (const entry of this.budget.entries) {
+            if (!breakdown[entry.aiTool]) {
+                breakdown[entry.aiTool] = { total: 0, count: 0, average: 0 };
             }
-            acc[call.tool].cost += call.cost;
-            acc[call.tool].count += 1;
-            return acc;
-        }, {} as { [tool: string]: { cost: number; count: number } });
-
-        return Object.entries(toolStats)
-            .map(([tool, stats]) => `- ${tool}: $${stats.cost.toFixed(2)} (${stats.count} calls)`)
-            .join('\n');
-    }
-
-    private loadCostData(): void {
-        try {
-            if (fs.existsSync(this.costFile)) {
-                this.costData = JSON.parse(fs.readFileSync(this.costFile, 'utf8'));
-            } else {
-                this.initializeCostData();
-            }
-        } catch (error) {
-            console.error('Failed to load cost data:', error);
-            this.initializeCostData();
+            
+            breakdown[entry.aiTool].total += entry.amount;
+            breakdown[entry.aiTool].count += 1;
         }
+        
+        // Calculate averages
+        for (const tool in breakdown) {
+            breakdown[tool].average = breakdown[tool].total / breakdown[tool].count;
+        }
+        
+        return breakdown;
     }
 
-    private initializeCostData(): void {
-        this.costData = {
-            monthly_budget: 50.0,
-            current_month: new Date().toISOString().substring(0, 7),
-            spent: 0.0,
-            calls: []
-        };
-    }
-
-    private async saveCostData(): Promise<void> {
+    private async loadBudget(): Promise<void> {
         try {
             // Ensure directory exists
-            const dir = path.dirname(this.costFile);
+            const dir = path.dirname(this.configPath);
             if (!fs.existsSync(dir)) {
                 fs.mkdirSync(dir, { recursive: true });
             }
             
-            fs.writeFileSync(this.costFile, JSON.stringify(this.costData, null, 2));
+            if (fs.existsSync(this.configPath)) {
+                const data = JSON.parse(fs.readFileSync(this.configPath, 'utf8'));
+                this.budget = {
+                    ...data,
+                    entries: data.entries.map((entry: any) => ({
+                        ...entry,
+                        timestamp: new Date(entry.timestamp)
+                    }))
+                };
+                
+                // Check if we need to reset for new month
+                await this.resetIfNewMonth();
+            } else {
+                // Create default budget file
+                await this.saveBudget();
+            }
         } catch (error) {
-            console.error('Failed to save cost data:', error);
+            // Use default budget if loading fails
+            this.budget = this.getDefaultBudget();
+            console.error('Error loading budget data:', error);
         }
+    }
+
+    private async resetIfNewMonth(): Promise<void> {
+        const currentMonth = this.getCurrentMonth();
+        
+        if (this.budget.currentMonth !== currentMonth) {
+            // Archive previous month's data
+            await this.archiveMonth(this.budget.currentMonth);
+            
+            // Reset for new month
+            this.budget = {
+                monthlyBudget: this.budget.monthlyBudget, // Keep same budget
+                currentMonth,
+                totalSpent: 0,
+                entries: []
+            };
+            
+            await this.saveBudget();
+            this.updateStatusBar();
+            
+            // Show notification about new month reset
+            vscode.window.showInformationMessage(
+                `💰 SuperRez: New month budget reset! $${this.budget.monthlyBudget.toFixed(2)} available.`
+            );
+        }
+    }
+
+    private async archiveMonth(month: string): Promise<void> {
+        try {
+            const archivePath = path.join(os.homedir(), '.superrez', 'archive');
+            if (!fs.existsSync(archivePath)) {
+                fs.mkdirSync(archivePath, { recursive: true });
+            }
+            
+            const archiveFile = path.join(archivePath, `extension-budget-${month}.json`);
+            fs.writeFileSync(archiveFile, JSON.stringify(this.budget, null, 2));
+        } catch (error) {
+            // Ignore archive errors
+        }
+    }
+
+    private async saveBudget(): Promise<void> {
+        try {
+            // Ensure directory exists
+            const dir = path.dirname(this.configPath);
+            if (!fs.existsSync(dir)) {
+                fs.mkdirSync(dir, { recursive: true });
+            }
+            
+            fs.writeFileSync(this.configPath, JSON.stringify(this.budget, null, 2));
+        } catch (error) {
+            console.error('Error saving budget data:', error);
+        }
+    }
+
+    private updateStatusBar(): void {
+        const remaining = this.getRemainingBudget();
+        const percentage = (this.budget.totalSpent / this.budget.monthlyBudget) * 100;
+        
+        let icon = '💰';
+        
+        if (percentage >= 95) {
+            icon = '🚨';
+        } else if (percentage >= 80) {
+            icon = '⚠️';
+        } else if (percentage >= 50) {
+            icon = '💡';
+        }
+        
+        this.statusBarItem.text = `${icon} $${remaining.toFixed(2)}`;
+        this.statusBarItem.tooltip = `SuperRez Budget: $${remaining.toFixed(2)} remaining this month (${(100 - percentage).toFixed(1)}% left)`;
+        this.statusBarItem.command = 'superrez.showBudgetStatus';
+    }
+
+    // Warning thresholds
+    shouldWarnBudget(): boolean {
+        const percentage = (this.budget.totalSpent / this.budget.monthlyBudget) * 100;
+        return percentage >= 80; // Warn at 80%
+    }
+
+    shouldBlockBudget(): boolean {
+        const percentage = (this.budget.totalSpent / this.budget.monthlyBudget) * 100;
+        return percentage >= 95; // Block at 95%
+    }
+
+    // Show budget report in new document
+    async showBudgetReport(): Promise<void> {
+        const report = this.getMonthlyReport();
+        const doc = await vscode.workspace.openTextDocument({
+            content: report,
+            language: 'markdown'
+        });
+        await vscode.window.showTextDocument(doc);
+    }
+
+    // Cleanup method
+    dispose(): void {
+        this.statusBarItem.dispose();
     }
 }
